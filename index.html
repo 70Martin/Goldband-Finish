@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotřeba Goldband Finish</title>
+<link rel="apple-touch-icon" href="icon-192x192.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap');
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #eaeaea;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+        }
+        input, button, select {
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .calculate-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .reset-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .save-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .add-group-btn {
+            background-color: #FFC107;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        h1, h2, h3 {
+            text-align: center;
+            margin: 15px 0;
+            color: #333;
+        }
+        a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spotřeba Goldband Finish</h1>
+        <div id="inputs-container">
+            <div class="input-group">
+                <label for="surfaceSelect">Vyberte typ povrchu:</label>
+                <select class="surfaceSelect">
+                    <option value="hrubý">Hrubý povrch</option>
+                    <option value="hladký">Hladký povrch</option>
+                    <option value="velmi_hladký">Velmi hladký povrch</option>
+                </select>
+                <label for="thicknessSelect">Vyberte množství materiálu v kg/m²:</label>
+                <select class="thicknessSelect">
+                    <option value="1.9">1.9 kg (2*válečkem - reálná spotřeba)</option>
+                    <option value="1.5">1.5 kg/m²/mm (Technické listy)</option>
+                    <option value="3">3 kg/m²/2mm</option>
+                </select>
+                <label for="areaInput">Zadejte plochu v m²:</label>
+                <input type="number" class="areaInput" placeholder="Plocha v m²" min="0" step="0.01">
+            </div>
+        </div>
+
+        <button class="calculate-btn" onclick="calculateMaterial()">Vypočítat</button>
+        <button class="reset-btn" onclick="resetForm()">Resetovat</button>
+        <button class="save-btn" onclick="saveAsPDF()">Uložit jako PDF</button>
+        <button class="add-group-btn" onclick="addInputGroup()">Přidat další plochu</button>
+
+        <h2 id="resultText"></h2>
+        <h3 id="packingText"></h3>
+        <h3 id="webLink"></h3>
+        <h3>Ředění stěrky:</h3>
+        <p>1 litr vody na 18 kg Goldband Finish</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script>
+        function calculateMaterial() {
+            const inputGroups = document.querySelectorAll('.input-group');
+            let totalResults = '';
+            let totalPackages = '';
+            inputGroups.forEach((group, index) => {
+                const area = parseFloat(group.querySelector('.areaInput').value);
+                const thickness = parseFloat(group.querySelector('.thicknessSelect').value);
+                const surfaceType = group.querySelector('.surfaceSelect').value;
+                let multiplier = 1;
+                if (surfaceType === 'hrubý') {
+                    multiplier = 1.2;
+                } else if (surfaceType === 'velmi_hladký') {
+                    multiplier = 0.8;
+                }
+                if (!isNaN(area) && area > 0) {
+                    const totalMaterial = (area * thickness * multiplier).toFixed(2);
+                    totalResults += `Plocha ${index + 1}: Potřebná stěrka: ${totalMaterial} kg<br>`;
+                    let packagingOptions = [18, 8, 3];
+                    let numberOfPackages = {};
+                    let remainingMaterial = totalMaterial;
+                    packagingOptions.forEach(function(pack) {
+                        numberOfPackages[pack] = Math.floor(remainingMaterial / pack);
+                        remainingMaterial = (remainingMaterial % pack).toFixed(2);
+                    });
+                    let packageText = `Plocha ${index + 1}: Potřebná balení: `;
+                    packagingOptions.forEach(function(pack) {
+                        if (numberOfPackages[pack] > 0) {
+                            packageText += `${numberOfPackages[pack]}x ${pack} kg, `;
+                        }
+                    });
+                    if (remainingMaterial > 0) {
+                        packageText += `${remainingMaterial} kg zbývá<br>`;
+                    }
+                    totalPackages += packageText;
+                } else {
+                    totalResults += `Plocha ${index + 1}: Zadejte kladnou plochu.<br>`;
+                }
+            });
+            document.getElementById("resultText").innerHTML = totalResults;
+            document.getElementById("packingText").innerHTML = totalPackages;
+            document.getElementById("webLink").innerHTML = `<a href="https://www.google.com/search?q=Goldband+Finish" target="_blank">Vyhledat Goldband Finish na internetu</a>`;
+        }
+
+        function resetForm() {
+            document.getElementById("inputs-container").innerHTML = `<div class="input-group">
+                <label for="surfaceSelect">Vyberte typ povrchu:</label>
+                <select class="surfaceSelect">
+                    <option value="hrubý">Hrubý povrch</option>
+                    <option value="hladký">Hladký povrch</option>
+                    <option value="velmi_hladký">Velmi hladký povrch</option>
+                </select>
+                <label for="thicknessSelect">Vyberte množství materiálu v kg/m²:</label>
+                <select class="thicknessSelect">
+                    <option value="1.9">1.9 kg (2*válečkem - reálná spotřeba)</option>
+                    <option value="1.5">1.5 kg/m²/mm (Technické listy)</option>
+                    <option value="3">3 kg/m²/2mm</option>
+                </select>
+                <label for="areaInput">Zadejte plochu v m²:</label>
+                <input type="number" class="areaInput" placeholder="Plocha v m²" min="0" step="0.01">
+            </div>`;
+            document.getElementById("resultText").innerHTML = '';
+            document.getElementById("packingText").innerHTML = '';
+            document.getElementById("webLink").innerHTML = '';
+        }
+
+        function addInputGroup() {
+            const container = document.getElementById('inputs-container');
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = `
+                <label for="surfaceSelect">Vyberte typ povrchu:</label>
+                <select class="surfaceSelect">
+                    <option value="hrubý">Hrubý povrch</option>
+                    <option value="hladký">Hladký povrch</option>
+                    <option value="velmi_hladký">Velmi hladký povrch</option>
+                </select>
+                <label for="thicknessSelect">Vyberte množství materiálu v kg/m²:</label>
+                <select class="thicknessSelect">
+                    <option value="1.9">1.9 kg (2*válečkem - reálná spotřeba)</option>
+                    <option value="1.5">1.5 kg/m²/mm (Technické listy)</option>
+                    <option value="3">3 kg/m²/2mm</option>
+                </select>
+                <label for="areaInput">Zadejte plochu v m²:</label>
+                <input type="number" class="areaInput" placeholder="Plocha v m²" min="0" step="0.01">
+            `;
+            container.appendChild(inputGroup);
+        }
+
+        function saveAsPDF() {
+            const container = document.querySelector('.container');
+            html2pdf().from(container).save('Spotreba_Goldband_Finish.pdf');
+        }
+    </script>
+</body>
+</html>
