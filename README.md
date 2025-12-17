@@ -1,6 +1,6 @@
 Výpočet spotřeby Knauf Goldband Finish
 Korekční faktory pro reálnou spotřebu jsou zahrnuty.
-## App 1 – Internal Tool
+## App spotřeby materiálu – Internal Tool
 - Source: GitHub (branch: main)
 - Runtime: GitHub Pages
 - Purpose: Internal tool
