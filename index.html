@@ -216,5 +216,12 @@
     <footer style="text-align:center; font-size: 0.8em; color: #888; padding: 1em 0;">
 Součást ekosystému <strong>NeoStudio Analytics</strong> – © 2025
 </footer> 
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('worker.js');
+  });
+}
+</script>
 </body>
 </html>
